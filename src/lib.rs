@@ -1,7 +1,8 @@
 use std::fs;
 
 fn curl_input(day: u32) -> String {
-    let cookie_value = fs::read_to_string("aoc_session_cookie").unwrap();
+    let cookie_value = fs::read_to_string("aoc_session_cookie")
+        .expect("No session cookie file \"aoc_session_cookie\"");
     let output = std::process::Command::new("curl")
         .args([
             "-H".to_string(),
@@ -11,9 +12,9 @@ fn curl_input(day: u32) -> String {
         .output()
         .unwrap();
     if !output.status.success() {
-        panic!("Failed to call curl")
+        panic!("{}\n", String::from_utf8(output.stderr).unwrap())
     }
-    std::str::from_utf8(&output.stdout).unwrap().to_string()
+    String::from_utf8(output.stdout).unwrap()
 }
 
 pub fn input(day: u32) -> String {
