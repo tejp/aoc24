@@ -1,42 +1,25 @@
-use std::collections::HashMap;
-
-fn insert_sorted(v: &mut Vec<u64>, n: u64) {
-    let i = match v.binary_search(&n) {
-        Ok(n) | Err(n) => n,
-    };
-    v.insert(i, n);
-}
-
 fn main() {
     let input = aoc24::input(1);
 
-    let (mut left, mut right) = (vec![], vec![]);
+    let (mut left, mut right): (Vec<u64>, Vec<u64>) = input
+        .lines()
+        .map(|line| {
+            let mut t = line.split("   ").map(str::parse::<u64>);
+            (t.next().unwrap().unwrap(), t.next().unwrap().unwrap())
+        })
+        .unzip();
 
-    for line in input.lines() {
-        let mut nums = line.split("   ");
+    left.sort_unstable();
+    right.sort_unstable();
 
-        insert_sorted(&mut left, nums.next().unwrap().parse().unwrap());
-        insert_sorted(&mut right, nums.next().unwrap().parse().unwrap());
-    }
+    let part1: u64 = Iterator::zip(left.iter().by_ref(), right.iter().by_ref())
+        .fold(0, |t, (l, r)| t + l.abs_diff(*r));
 
-    let total: u64 = left
-        .iter()
-        .by_ref()
-        .zip(right.iter().by_ref())
-        .map(|(l, r)| l.abs_diff(*r))
-        .sum();
+    println!("{}", part1);
 
-    println!("{}", total);
-
-    let right_count = right.into_iter().fold(HashMap::new(), |mut map, val| {
-        map.entry(val).and_modify(|frq| *frq += 1u64).or_insert(1);
-        map
+    let part2: u64 = left.iter().fold(0, |t, l| {
+        t + l * right.iter().filter(|&r| r == l).count() as u64
     });
 
-    let similarity: u64 = left
-        .iter()
-        .map(|n| n * right_count.get(n).unwrap_or(&0))
-        .sum();
-
-    println!("{}", similarity);
+    println!("{}", part2);
 }
