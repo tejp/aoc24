@@ -8,7 +8,7 @@ fn insert_sorted(v: &mut Vec<u64>, n: u64) {
 }
 
 fn main() {
-    let input = std::fs::read_to_string("input/01").unwrap();
+    let input = aoc24::input(1);
 
     let (mut left, mut right) = (vec![], vec![]);
 
