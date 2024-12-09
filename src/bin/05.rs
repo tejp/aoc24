@@ -46,9 +46,9 @@ fn main() {
         }
         if inc {
             a + l[l.len() / 2].parse::<u32>().unwrap()
+        } else {
+            a
         }
-        else {
-            a}
     });
 
     println!("{}", part2);

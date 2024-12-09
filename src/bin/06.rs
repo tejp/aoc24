@@ -1,10 +1,7 @@
 use std::collections::HashSet;
 
 fn main() {
-    let mut input: Vec<char> = aoc24::input(6)
-        .chars()
-        .filter(|&c| '\n' != c)
-        .collect();
+    let mut input: Vec<char> = aoc24::input(6).chars().filter(|&c| '\n' != c).collect();
 
     let startpos = input.iter().position(|&c| c == '^').unwrap();
 
