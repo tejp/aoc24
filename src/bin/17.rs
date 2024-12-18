@@ -51,49 +51,53 @@ fn main() {
 
     println!("{}", part1);
 
-    for i in 1 << 45..1<<48 {
-        let mut p = 0;
-        //let mut output = vec![];
-        let mut out_i = 0;
+    let mut nums = vec![0];
 
-        let mut reg1 = [i, reg[1], reg[2]];
-        loop {
-            if p >= program.len() {
-                break;
-            }
+    for &o in program.iter().rev() {
+        let mut new_nums = vec![];
 
-            let (inst, op) = (program[p], program[p + 1]);
-            let combo = || if op > 3 { reg1[op - 4] } else { op };
-
-            //println!("p:{p}\tinst:{}\top:{}\tco:{}\tregs:{:?}", inst, op, combo(), reg);
-            match inst {
-                0 => reg1[0] /= 1 << combo(),
-                1 => reg1[1] ^= op,
-                2 => reg1[1] = combo() % 8,
-                3 => {
-                    if reg1[0] != 0 {
-                        p = op;
-                        continue;
-                    }
-                }
-                4 => reg1[1] ^= reg1[2],
-                5 => {
-                    if program[out_i] != combo() % 8 {
+        for num in &nums {
+            for x in 0..8 {
+                let new_num = (num << 3) + x;
+                p = 0;
+                output = vec![];
+                reg1[0] = new_num;
+                loop {
+                    if p >= program.len() {
                         break;
                     }
-                    out_i += 1
+            
+                    let (inst, op) = (program[p], program[p + 1]);
+                    let combo = || if op > 3 { reg1[op - 4] } else { op };
+            
+                    //println!("p:{p}\tinst:{}\top:{}\tco:{}\tregs:{:?}", inst, op, combo(), reg);
+                    match inst {
+                        0 => reg1[0] /= 1 << combo(),
+                        1 => reg1[1] ^= op,
+                        2 => reg1[1] = combo() % 8,
+                        3 => {
+                            /*if reg1[0] != 0 {
+                                p = op;
+                                continue;
+                            }*/
+                        }
+                        4 => reg1[1] ^= reg1[2],
+                        5 => output.push(combo() % 8),
+                        6 => reg1[1] = reg1[0] / (1 << combo()),
+                        7 => reg1[2] = reg1[0] / (1 << combo()),
+                        _ => panic!(),
+                    }
+                    p += 2;
                 }
-                6 => reg1[1] = reg1[0] / (1 << combo()),
-                7 => reg1[2] = reg1[0] / (1 << combo()),
-                _ => panic!(),
+                if output == vec![o] {
+                    new_nums.push(new_num);
+                }
             }
-            p += 2;
         }
-        if out_i == program.len() {
-            println!("{i}");
-            break;
-        }
+        nums = new_nums;
+        println!("{:?}", nums);
     }
+    println!("{}", nums.iter().min().unwrap());
 }
 
 const _TEST: &str = r#"Register A: 729
