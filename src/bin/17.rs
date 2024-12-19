@@ -15,10 +15,7 @@ fn main() {
 
     let mut reg1 = reg.clone();
 
-    loop {
-        if p >= program.len() {
-            break;
-        }
+    while p < program.len() {
 
         let (inst, op) = (program[p], program[p + 1]);
         let combo = || if op > 3 { reg1[op - 4] } else { op };
@@ -52,6 +49,7 @@ fn main() {
     println!("{}", part1);
 
     let mut nums = vec![0];
+    let mut part2 = 0;
 
     for &o in program.iter().rev() {
         let mut new_nums = vec![];
@@ -62,10 +60,7 @@ fn main() {
                 p = 0;
                 output = vec![];
                 reg1[0] = new_num;
-                loop {
-                    if p >= program.len() {
-                        break;
-                    }
+                while p < program.len() - 2 {
             
                     let (inst, op) = (program[p], program[p + 1]);
                     let combo = || if op > 3 { reg1[op - 4] } else { op };
@@ -76,10 +71,10 @@ fn main() {
                         1 => reg1[1] ^= op,
                         2 => reg1[1] = combo() % 8,
                         3 => {
-                            /*if reg1[0] != 0 {
+                            if reg1[0] != 0 {
                                 p = op;
                                 continue;
-                            }*/
+                            }
                         }
                         4 => reg1[1] ^= reg1[2],
                         5 => output.push(combo() % 8),
@@ -95,7 +90,7 @@ fn main() {
             }
         }
         nums = new_nums;
-        println!("{:?}", nums);
+        //println!("{:?}", nums);
     }
     println!("{}", nums.iter().min().unwrap());
 }
