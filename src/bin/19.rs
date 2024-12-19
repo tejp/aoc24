@@ -1,52 +1,48 @@
-use std::collections::{HashSet, HashMap, VecDeque};
+use std::collections::{HashMap, HashSet};
 
 fn main() {
-    let binding = aoc24::input(19);
-    let input: Vec<Vec<String>> = binding
-    .split("\n\n")
-    .map(|s| s.split(|c: char| !c.is_alphabetic()).map(|s| s.to_string()).filter(|s| !s.is_empty()).collect()).collect();
+    let input: Vec<Vec<String>> = aoc24::input(19)
+        .trim()
+        .split("\n\n")
+        .map(|s| {
+            s.split(|c: char| !c.is_alphabetic())
+                .map(|s| s.to_string())
+                .collect()
+        })
+        .collect();
 
-    let schemes: HashSet<String> = input[0].iter().cloned().fold(HashSet::new(), |mut hs, s| {
-        hs.insert(s);
-        hs
-    });
+    let schemes: HashSet<&str> = HashSet::from_iter(input[0].iter().map(String::as_str));
 
     let max_len = schemes.iter().map(|s| s.len()).max().unwrap();
 
-    let das = |s: &str| {
-        let mut new_ = vec![];
-        for n in 1..max_len.min(s.len() + 1) {
-            let (start, rest) = s.split_at(n);
-            if schemes.contains(start) {
-                new_.push(rest.to_string());
-            }
-        }
-        new_
-    };
-
-    let mut part1 = 1;
+    let mut part1 = 0;
+    let mut part2 = 0;
 
     for s in &input[1] {
-        let mut p = vec![s.clone()];
-        let mut tried: HashMap<String, u128> = HashMap::new();
-        while let Some(s1) = p.pop() {
+        let mut todo = vec![s.as_str()];
+        let mut visited: HashMap<&str, u64> = HashMap::from([(s.as_str(), 1)]);
+        while let Some(s1) = todo.pop() {
+            let &n = visited.get(s1).unwrap();
             if s1.is_empty() {
-                println!("'{s}'");
-                part1 += tried.get(&s1).unwrap();
+                part1 += 1;
+                part2 += n;
             } else {
-                for rest in das(&s1) {
-                    let &n = tried.get(&s1).unwrap_or(&1);
-                    tried.entry(rest.clone()).and_modify(|d| *d += n)
-                    .or_insert_with(|| {
-                        let pp = p.partition_point(|pred| pred.len() < rest.len());
-                        p.insert(pp, rest);
-                        n
-                    });
+                for len in 1..max_len.min(s1.len()) + 1 {
+                    let (start, rest) = s1.split_at(len);
+                    if schemes.contains(start) {
+                        if let Some(d) = visited.get_mut(rest) {
+                            *d += n;
+                        } else {
+                            visited.insert(rest, n);
+                            let pp = todo.partition_point(|&pred| pred.len() < rest.len());
+                            todo.insert(pp, rest);
+                        }
+                    }
                 }
             }
         }
-        println!("{}", part1);
     }
 
     println!("{}", part1);
+    println!("{}", part2);
 }
