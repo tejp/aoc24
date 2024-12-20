@@ -18,30 +18,43 @@ fn main() {
         }
     }
 
-    let solve = |input: &Maze| -> usize {
-        let mut visited = vec![vec![false; w]; h];
-        let mut todo = vec![s];
-        for i in 1.. {
-            let mut new_todo = vec![];
-            while let Some((y, x)) = todo.pop() {
-                if (y, x) == e {
-                    return i;
-                }
-                if !visited[y][x] && input[y][x] != '#' {
-                    visited[y][x] = true;
-                    new_todo.extend([(y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)]);
-                }
-            }
-            todo = new_todo;
-        }
-        64
-    };
+    let mut steps = vec![vec![-1; w]; h];
+    let mut step_list = vec![];
 
-    let baseline = solve(&input);
+    let mut todo = vec![s];
+    'outer: for i in 0.. {
+        let mut new_todo = vec![];
+        while let Some((y, x)) = todo.pop() {
+            if steps[y][x] == -1 && input[y][x] != '#' {
+                steps[y][x] = i;
+                step_list.push((y, x));
+                if (y, x) == e {
+                    break 'outer;
+                }
+                new_todo.extend([(y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)]);
+            }
+        }
+        todo = new_todo;
+    }
+
+    let r = 20;
+    let t: Vec<(isize, isize)> = (0..r)
+        .flat_map(|ry| (1.max(ry)..r - ry).map(move |rx| (ry, rx)))
+        .flat_map(|(ry, rx)| [(ry, rx), (-ry, rx), (ry, -rx), (-ry, -rx)])
+        .collect();
+
+    println!("{:?}", t);
+
+    for (y, x) in step_list {
+        for ry in 0.. {
+            //let x_ = i - r;
+            for rx in 0..(r * 2) {}
+        }
+    }
 
     let mut part1 = 0;
 
-    for y in 1..h {
+    /*for y in 1..h {
         for x in 1..w {
             if input[y][x] == '.' {
                 if x + 2 < w && input[y][x + 1] == '#' {
@@ -84,11 +97,15 @@ fn main() {
                 }
             }
         }
-    }
+    }*/
 
-    /*for row in input {
+    /*for row in steps {
         for c in row {
-            print!("{}", c);
+            if c == -1 {
+                print!(" ");
+            } else {
+                print!("O");
+            }
         }
         println!();
     }*/
