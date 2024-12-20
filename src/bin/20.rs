@@ -1,6 +1,7 @@
-type Maze = Vec<Vec<char>>;
+use std::collections::HashSet;
+
 fn main() {
-    let mut input: Maze = aoc24::input(20)
+    let input: Vec<Vec<char>> = aoc24::input(20)
         .lines()
         .map(|s| s.chars().collect())
         .collect();
@@ -37,78 +38,29 @@ fn main() {
         todo = new_todo;
     }
 
-    let r = 20;
-    let t: Vec<(isize, isize)> = (0..r)
-        .flat_map(|ry| (1.max(ry)..r - ry).map(move |rx| (ry, rx)))
-        .flat_map(|(ry, rx)| [(ry, rx), (-ry, rx), (ry, -rx), (-ry, -rx)])
-        .collect();
-
-    println!("{:?}", t);
-
-    for (y, x) in step_list {
-        for ry in 0.. {
-            //let x_ = i - r;
-            for rx in 0..(r * 2) {}
-        }
-    }
-
-    let mut part1 = 0;
-
-    /*for y in 1..h {
-        for x in 1..w {
-            if input[y][x] == '.' {
-                if x + 2 < w && input[y][x + 1] == '#' {
-                    if input[y][x + 2] == '.' {
-                        input[y][x + 1] = '.';
-                        if baseline - 99 > solve(&input) {
-                            part1 += 1;
-                        }
-                        input[y][x + 1] = '#';
-                    } else if x + 3 < w && input[y][x + 2] == '#' {
-                        if input[y][x + 3] == '.' {
-                            input[y][x + 1] = '.';
-                            input[y][x + 2] = '.';
-                            if baseline - 99 > solve(&input) {
-                                part1 += 1;
-                            }
-                            input[y][x + 1] = '#';
-                            input[y][x + 2] = '#';
-                        }
-                    }
-                }
-                if y + 2 < h && input[y + 1][x] == '#' {
-                    if input[y + 2][x] == '.' {
-                        input[y + 1][x] = '.';
-                        if baseline - 99 > solve(&input) {
-                            part1 += 1;
-                        }
-                        input[y + 1][x] = '#';
-                    } else if y + 3 < h && input[y + 2][x] == '#' {
-                        if input[y + 3][x] == '.' {
-                            input[y + 1][x] = '.';
-                            input[y + 2][x] = '.';
-                            if baseline - 99 > solve(&input) {
-                                part1 += 1;
-                            }
-                            input[y + 1][x] = '#';
-                            input[y + 2][x] = '#';
-                        }
+    
+    let shorter_with_cheat = |cheat_length: isize| {
+        let r = cheat_length + 1;
+        let t: HashSet<(isize, isize)> = (0..r)
+            .flat_map(|ry| (0..r - ry).map(move |rx| (ry, rx)))
+            .flat_map(|(ry, rx)| [(ry, rx), (-ry, rx), (ry, -rx), (-ry, -rx)])
+            .collect();
+        let mut n = 0;
+        for &(y, x) in &step_list {
+            for &(dy, dx) in &t {
+                if let (Some(y_), Some(x_)) = (y.checked_add_signed(dy), x.checked_add_signed(dx)) {
+                    if x_ < w && y_ < h && steps[y][x] + 99 + dy.abs() + dx.abs() < steps[y_][x_] {
+                        n += 1;
                     }
                 }
             }
         }
-    }*/
+        n
+    };
 
-    /*for row in steps {
-        for c in row {
-            if c == -1 {
-                print!(" ");
-            } else {
-                print!("O");
-            }
-        }
-        println!();
-    }*/
+    let part1 = shorter_with_cheat(2);
+    let part2 = shorter_with_cheat(20);
 
     println!("{}", part1);
+    println!("{}", part2);
 }
