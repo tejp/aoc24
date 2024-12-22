@@ -1,4 +1,8 @@
-#[derive(PartialEq, Debug, Clone, Copy)]
+use std::collections::HashMap;
+
+use Direction::*;
+
+#[derive(PartialEq, Debug, Clone, Copy, Eq, Hash)]
 enum Direction {
     U,
     R,
@@ -6,8 +10,6 @@ enum Direction {
     L,
     A,
 }
-
-use Direction::*;
 
 fn main() {
     let input: String = aoc24::input(21);
@@ -32,55 +34,62 @@ fn main() {
     println!("{}", part1);
 }
 
+
 fn numerical(code: &Vec<u32>) -> usize {
+    let mut hm: HashMap<(Vec<Direction>, u64), usize> = HashMap::new();
     //println!("{:?}", code);
     [10].iter()
         .chain(code)
         .zip(code)
         .map(sm1)
-        .map(|s| s.iter().map(|s| directional(s, 2)).min().unwrap())
+        .map(|s| s.iter().map(|s| directional(&mut hm, s, 25)).min().unwrap())
         .sum()
 }
 
-fn directional(code: &Vec<Direction>, level: u64) -> usize {
+fn directional(cache: &mut HashMap<(Vec<Direction>, u64), usize>, code: &Vec<Direction>, level: u64) -> usize {
     if level == 0 {
         return code.len();
     }
+    if let Some(n) = cache.get(&(code.clone(), level)) {
+        return *n;
+    }
     //println!("{:?}", code);
-    [A].iter()
+    let n = [A].iter()
         .chain(code)
         .zip(code)
-        .map(sm2)
-        .map(|s| s.iter().map(|s| directional(s, level - 1)).min().unwrap())
-        .sum()
+        .map(|s| sm2(cache, s, level - 1))
+        .sum();
+    cache.insert((code.clone(), level), n);
+    n
 }
 
-fn sm2(s: (&Direction, &Direction)) -> Vec<Vec<Direction>> {
+#[inline(always)]
+fn sm2(cache: &mut HashMap<(Vec<Direction>, u64), usize>, s: (&Direction, &Direction), level: u64) -> usize {
     match s {
-        (a, b) if a == b => vec![vec![A]],
+        (a, b) if a == b => directional(cache, &vec![A], level),
 
-        (R, U) => vec![vec![U, L, A], vec![L, U, A]],
-        (R, D) => vec![vec![L, A]],
-        (R, L) => vec![vec![L, L, A]],
-        (R, A) => vec![vec![U, A]],
+        (R, U) => directional(cache, &vec![U, L, A], level).min(directional(cache, &vec![L, U, A], level)),
+        (R, D) => directional(cache, &vec![L, A], level),
+        (R, L) => directional(cache, &vec![L, L, A], level),
+        (R, A) => directional(cache, &vec![U, A], level),
 
-        (U, D) => vec![vec![D, A]],
-        (U, L) => vec![vec![D, L, A]],
-        (U, A) => vec![vec![R, A]],
-        (U, R) => vec![vec![R, D, A], vec![D, R, A]],
+        (U, D) => directional(cache, &vec![D, A], level),
+        (U, L) => directional(cache, &vec![D, L, A], level),
+        (U, A) => directional(cache, &vec![R, A], level),
+        (U, R) => directional(cache, &vec![R, D, A], level).min(directional(cache, &vec![D, R, A], level)),
 
-        (D, L) => vec![vec![L, A]],
-        (D, R) => vec![vec![R, A]],
-        (D, A) => vec![vec![R, U, A], vec![U, R, A]],
+        (D, L) => directional(cache, &vec![L, A], level),
+        (D, R) => directional(cache, &vec![R, A], level),
+        (D, A) => directional(cache, &vec![R, U, A], level).min(directional(cache, &vec![U, R, A], level)),
 
-        (L, U) => vec![vec![R, U, A]],
-        (L, D) => vec![vec![R, A]],
-        (L, A) => vec![vec![R, R, U, A]],
+        (L, U) => directional(cache, &vec![R, U, A], level),
+        (L, D) => directional(cache, &vec![R, A], level),
+        (L, A) => directional(cache, &vec![R, R, U, A], level),
 
-        (A, R) => vec![vec![D, A]],
-        (A, U) => vec![vec![L, A]],
-        (A, D) => vec![vec![D, L, A], vec![L, D, A]],
-        (A, L) => vec![vec![D, L, L, A]],
+        (A, R) => directional(cache, &vec![D, A], level),
+        (A, U) => directional(cache, &vec![L, A], level),
+        (A, D) => directional(cache, &vec![D, L, A], level).min(directional(cache, &vec![L, D, A], level)),
+        (A, L) => directional(cache, &vec![D, L, L, A], level),
 
         e => panic!("{:?}", e),
     }
