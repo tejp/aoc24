@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 fn main() {
     let input: Vec<[String; 2]> = aoc24::input(23)
@@ -12,45 +12,97 @@ fn main() {
         })
         .collect();
 
-    let mut hm: HashMap<&String, Vec<&String>> = HashMap::new();
+    let mut hm: HashMap<&str, BTreeSet<&str>> = HashMap::new();
 
-    let mut hs = HashSet::new();
+    let mut all_sets = HashSet::new();
 
     for [l, r] in &input {
-        hm.entry(l).and_modify(|v| v.push(r)).or_insert(vec![r]);
-        hm.entry(r).and_modify(|v| v.push(l)).or_insert(vec![l]);
-        let mut v = vec![l, r];
-        v.sort();
-        hs.insert(v);
+        hm.entry(l)
+            .and_modify(|v| {
+                v.insert(r);
+            })
+            .or_insert(BTreeSet::from([l.as_str(), r]));
+        hm.entry(r)
+            .and_modify(|v| {
+                v.insert(l);
+            })
+            .or_insert(BTreeSet::from([l.as_str(), r]));
+        let v = BTreeSet::from_iter([l.as_str(), r]);
+        all_sets.insert(v);
     }
 
-    let mut part1 = 0;
+    // let mut part2 = BTreeSet::new();
 
-    for (&e, v) in &hm {
-        let combs = v.iter().enumerate().flat_map(|(i, &e1)| v[i+1..].iter().map(move |&e2|(e1,e2)));
-        for (l, r) in combs {
-            if hm.get(l).unwrap().contains(&r) && (e.starts_with("t") || l.starts_with("t") || r.starts_with("t")) {
-                part1 += 1;
-            }
-        }
+    // for (_, set) in &hm {
+    //     let mut interset = set.clone();
+
+    //     loop {
+    //         let mut remo: HashMap<&String, i32> = HashMap::new();
+
+    //         for k in interset {
+    //             let mut set2 = hm.get(k).unwrap();
+    //             for &e in set.difference(set2) {
+    //                 remo.entry(e).and_modify(|c| *c += 1).or_insert(1);
+    //             }
+    //         }
+    //         if remo.is_empty() {
+    //             break;
+    //         }
+    //     }
+
+    //     //let c: BTreeSet<_> = l_set.intersection(r_set).chain([&l, &r]).collect();
+    //     if interset.len() > part2.len() {
+    //         println!("{:?}", interset);
+    //         part2 = interset.len();
+    //     }
+
+    // }
+
+    // let mut part1 = 0;
+
+    // for (&e, v) in &hm {
+    //     let combs = v
+    //         .iter()
+    //         .flat_map(|&e1| v.iter().map(move |&e2| (e1, e2)))
+    //         .collect();
+    //     for (l, r) in combs {
+    //         if hm.get(l).unwrap().contains(&r)
+    //             && (e.starts_with("t") || l.starts_with("t") || r.starts_with("t"))
+    //         {
+    //             part1 += 1;
+    //         }
+    //     }
+    // }
+
+    // println!("{}", part1);
+
+    for (&e, s1) in &hm {
+        let v = all_sets
+            .iter()
+            .filter(|s2| s1.is_superset(s2))
+            .cloned()
+            .map(|mut s2| {
+                s2.insert(e);
+                s2
+            })
+            .collect::<Vec<_>>();
+        all_sets.extend(v);
     }
+
+    let part1 = all_sets
+        .iter()
+        .filter(|s| s.len() == 3 && s.iter().any(|s| s.starts_with("t")))
+        .count();
+
+    let part2 = all_sets
+        .iter()
+        .max_by(|v1, v2| v1.len().cmp(&v2.len()))
+        .unwrap()
+        .iter()
+        .cloned()
+        .collect::<Vec<&str>>()
+        .join(",");
 
     println!("{}", part1);
-
-    for (&e, v) in &hm {
-        let mut to_add = vec![];
-        for s in &hs {
-            if s.iter().all(|s2| v.contains(s2)) {
-                let mut v = s.clone();
-                v.push(e);
-                v.sort();
-                to_add.push(v);
-            }
-        }
-        hs.extend(to_add);
-    }
-
-    let part2 = hs.iter().max_by(|v1, v2| v1.len().cmp(&v2.len())).unwrap();
-
-    println!("{:?}", part2);
+    println!("{}", part2);
 }
