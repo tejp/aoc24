@@ -1,42 +1,24 @@
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap, VecDeque};
 
 fn main() {
     let input: Vec<Vec<String>> = aoc24::input(24)
         .split("\n\n")
         .map(|s| {
             s.split(|c: char| !c.is_alphanumeric())
-                .filter(|s| !s.is_empty())
-                .map(str::to_string)
-                .collect::<Vec<_>>()
+                .filter_map(|s| (!s.is_empty()).then_some(s.to_string()))
+                .collect()
         })
         .collect();
 
-    let mut regs: HashMap<&str, u64> = HashMap::from_iter(
-        input[0]
-            .iter()
-            .zip(input[0][1..].iter())
-            .step_by(2)
-            .map(|(k, v)| (k.as_str(), v.parse().unwrap())),
-    );
+    let mut regs: HashMap<&String, u64> = input[0]
+        .chunks_exact(2)
+        .map(|c| (&c[0], c[1].parse().unwrap()))
+        .collect();
 
-    let mut work = vec![];
-    let mut work1 = vec![];
-    let ops = input[1].iter().zip(input[1][1..].iter()).zip(input[1][2..].iter()).zip(input[1][3..].iter()).step_by(4);
-    for (((l, op), r), s) in ops {
-        work1.push((l, op, r, s));
-    }
+    let mut work: VecDeque<&[String]> = input[1].chunks_exact(4).collect();
 
-    while !work1.is_empty() {
-        let mut new_work1 = vec![];
-        for &(l, op, r, s) in &work1 {
-            if let (Some(&l), Some(&r)) = (&regs.get(l.as_str()), &regs.get(r.as_str())) {
-                work.push((l, op, r, s));
-            } else {
-                new_work1.push((l, op, r, s));
-            }
-        }
-        work1 = new_work1;
-        while let Some((l, op, r, s)) = work.pop() {
+    while let Some(a @ [l, op, r, s]) = work.pop_front() {
+        if let (Some(&l), Some(&r)) = (regs.get(l), regs.get(r)) {
             let res = match op.as_str() {
                 "AND" => l & r,
                 "OR" => l | r,
@@ -44,37 +26,54 @@ fn main() {
                 _ => panic!(),
             };
             regs.insert(s, res);
+        } else {
+            work.push_back(a);
         }
     }
 
     let mut part1 = 0;
-    for i in 0..99 {
-        let t = format!("z{:02}", i);
-        if let Some(t) = regs.get(t.as_str()) {
-            part1 += t << i;
-        } else {
+    for i in 0.. {
+        let Some(b) = regs.get(&format!("z{:02}", i)) else {
             break;
-        }
+        };
+        part1 += b << i;
     }
 
     println!("{}", part1);
 
+    let ops: Vec<&[String]> = input[1].chunks_exact(4).collect();
+
     let (mut x, mut y, mut z) = (0, 0, 0);
 
-    for i in 0..99 {
-        let x_ = format!("x{:02}", i);
-        let y_ = format!("y{:02}", i);
-        let z_ = format!("z{:02}", i);
-        if regs.contains_key(x_.as_str()) {
-            x += regs.get(x_.as_str()).unwrap() << i;
-            y += regs.get(y_.as_str()).unwrap() << i;
-        }
-        if regs.contains_key(z_.as_str()) {
-            z += regs.get(z_.as_str()).unwrap() << i;
-        } else {
+    for i in 0.. {
+        let d = format!("{:02}", i);
+        let (sx, sy, sz) = (format!("x{d}"), format!("y{d}"), format!("z{d}"));
+        let (Some(xi), Some(yi), Some(zi)) = (regs.get(&sx), regs.get(&sy), regs.get(&sz)) else {
+            break;
+        };
+        x += xi << i;
+        y += yi << i;
+        z += zi << i;
+        if x + y & !(1 << i + 1) != z {
+            let mut v = VecDeque::from_iter([&sz, &sx, &sy]);
+            let mut to_print = vec![];
+            while let (true, Some(s)) = (to_print.len() < 7, v.pop_front()) {
+                for c in ops.iter().filter(|v| v.contains(&s)) {
+                    if !to_print.contains(c) {
+                        to_print.push(c);
+                    }
+                    [0, 2, 3].iter().for_each(|&i| {
+                        v.push_back(&c[i]);
+                    })
+                }
+            }
+            println!("Error {sz}:");
+            to_print.iter().for_each(|s| println!("{:?}", s));
             break;
         }
     }
 
-    println!("{:#050b}\n{:#050b}\n{:#050b}\n{:#050b}\n{:#050b}", x, y, x + y, z, (x + y) ^z);
+    let part2 = Vec::from_iter(BTreeSet::from(["Swaps goes here..."])).join(",");
+
+    println!("{}", part2);
 }
