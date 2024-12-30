@@ -1,108 +1,83 @@
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap};
+
+type Set<'a> = BTreeSet<&'a str>;
 
 fn main() {
-    let input: Vec<[String; 2]> = aoc24::input(23)
-        .lines()
-        .map(|s| {
-            s.split(|c: char| !c.is_alphabetic())
-                .map(str::to_string)
-                .collect::<Vec<_>>()
-                .try_into()
-                .unwrap()
-        })
+    let input: Vec<String> = aoc24::input(23)
+        .split(|c: char| !c.is_alphabetic())
+        .map(str::to_string)
         .collect();
 
-    let mut hm: HashMap<&str, BTreeSet<&str>> = HashMap::new();
+    let mut neighbours: HashMap<&str, Set> = HashMap::new();
 
-    let mut all_sets = HashSet::new();
-
-    for [l, r] in &input {
-        hm.entry(l)
-            .and_modify(|v| {
-                v.insert(r);
-            })
-            .or_insert(BTreeSet::from([l.as_str(), r]));
-        hm.entry(r)
-            .and_modify(|v| {
-                v.insert(l);
-            })
-            .or_insert(BTreeSet::from([l.as_str(), r]));
-        let v = BTreeSet::from_iter([l.as_str(), r]);
-        all_sets.insert(v);
+    for e in input.chunks_exact(2) {
+        neighbours.entry(&e[0]).or_default().insert(e[1].as_str());
+        neighbours.entry(&e[1]).or_default().insert(e[0].as_str());
     }
 
-    // let mut part2 = BTreeSet::new();
+    let mut part1 = 0;
 
-    // for (_, set) in &hm {
-    //     let mut interset = set.clone();
-
-    //     loop {
-    //         let mut remo: HashMap<&String, i32> = HashMap::new();
-
-    //         for k in interset {
-    //             let mut set2 = hm.get(k).unwrap();
-    //             for &e in set.difference(set2) {
-    //                 remo.entry(e).and_modify(|c| *c += 1).or_insert(1);
-    //             }
-    //         }
-    //         if remo.is_empty() {
-    //             break;
-    //         }
-    //     }
-
-    //     //let c: BTreeSet<_> = l_set.intersection(r_set).chain([&l, &r]).collect();
-    //     if interset.len() > part2.len() {
-    //         println!("{:?}", interset);
-    //         part2 = interset.len();
-    //     }
-
-    // }
-
-    // let mut part1 = 0;
-
-    // for (&e, v) in &hm {
-    //     let combs = v
-    //         .iter()
-    //         .flat_map(|&e1| v.iter().map(move |&e2| (e1, e2)))
-    //         .collect();
-    //     for (l, r) in combs {
-    //         if hm.get(l).unwrap().contains(&r)
-    //             && (e.starts_with("t") || l.starts_with("t") || r.starts_with("t"))
-    //         {
-    //             part1 += 1;
-    //         }
-    //     }
-    // }
-
-    // println!("{}", part1);
-
-    for (&e, s1) in &hm {
-        let v = all_sets
-            .iter()
-            .filter(|s2| s1.is_superset(s2))
-            .cloned()
-            .map(|mut s2| {
-                s2.insert(e);
-                s2
-            })
-            .collect::<Vec<_>>();
-        all_sets.extend(v);
+    let mut checked = Set::new();
+    for (&e1, v) in &neighbours {
+        let mut v = v - &checked;
+        checked.insert(e1);
+        while let Some(e2) = v.pop_first() {
+            let e2_n = neighbours.get(e2).unwrap();
+            for e3 in v.iter().filter(|&e3| e2_n.contains(e3)) {
+                if e1.starts_with("t") || e2.starts_with("t") || e3.starts_with("t") {
+                    part1 += 1;
+                }
+            }
+        }
     }
-
-    let part1 = all_sets
-        .iter()
-        .filter(|s| s.len() == 3 && s.iter().any(|s| s.starts_with("t")))
-        .count();
-
-    let part2 = all_sets
-        .iter()
-        .max_by(|v1, v2| v1.len().cmp(&v2.len()))
-        .unwrap()
-        .iter()
-        .cloned()
-        .collect::<Vec<&str>>()
-        .join(",");
 
     println!("{}", part1);
+
+    let max_clique = bron_kerbosch_2(
+        &mut Set::new(),
+        neighbours.keys().copied().collect(),
+        Set::new(),
+        &neighbours,
+    );
+
+    let part2 = Vec::from_iter(max_clique).join(",");
+
     println!("{}", part2);
+}
+
+fn bron_kerbosch_2<'a>(
+    r: &mut Set<'a>,
+    mut p: Set<'a>,
+    mut x: Set<'a>,
+    n: &HashMap<&str, Set<'a>>,
+) -> Set<'a> {
+    // algorithm BronKerbosch2(R, P, X) is
+    // if P and X are both empty then
+    //     report R as a maximal clique
+    // choose a pivot vertex u in P ⋃ X
+    // for each vertex v in P \ N(u) do
+    //     BronKerbosch2(R ⋃ {v}, P ⋂ N(v), X ⋂ N(v))
+    //     P := P \ {v}
+    //     X := X ⋃ {v}
+
+    let Some(u) = p.union(&x).max_by_key(|&v| n.get(v).unwrap().len()) else {
+        return r.clone();
+    };
+
+    let mut max_clique = Set::new();
+
+    for v in &p - n.get(u).unwrap() {
+        let nv = n.get(v).unwrap();
+        r.insert(v);
+        let p_ = p.intersection(nv).copied().collect();
+        let x_ = x.intersection(nv).copied().collect();
+        let clique = bron_kerbosch_2(r, p_, x_, n);
+        if clique.len() > max_clique.len() {
+            max_clique = clique;
+        }
+        r.remove(v);
+        p.remove(v);
+        x.insert(v);
+    }
+    max_clique
 }
