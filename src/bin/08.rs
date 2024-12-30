@@ -6,14 +6,12 @@ fn main() {
         .map(|s| s.chars().collect())
         .collect();
 
-    let mut hm = HashMap::new();
+    let mut hm: HashMap<char, Vec<_>> = HashMap::new();
 
     for (i, v) in input.iter().enumerate() {
         for (j, &c) in v.iter().enumerate() {
             if c != '.' {
-                hm.entry(c)
-                    .and_modify(|vec: &mut Vec<(isize, isize)>| vec.push((i as isize, j as isize)))
-                    .or_insert(vec![(i as isize, j as isize)]);
+                hm.entry(c).or_default().push((i as isize, j as isize));
             }
         }
     }

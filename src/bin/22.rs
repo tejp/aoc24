@@ -22,9 +22,7 @@ fn main() {
         for vd in (0..vdiff.len() - 4).map(|i| &vdiff[i..]) {
             let key = (vd[0].1, vd[1].1, vd[2].1, vd[3].1);
             if added.insert(key) {
-                best.entry(key)
-                    .and_modify(|price| *price += vd[3].0)
-                    .or_insert(vd[3].0);
+                *best.entry(key).or_default() += vd[3].0;
             }
         }
     }

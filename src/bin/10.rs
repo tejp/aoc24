@@ -1,18 +1,7 @@
 use std::collections::HashMap;
 
 fn main() {
-    let input: Vec<Vec<u32>> = (
-        aoc24::input(10),
-        r#"89010123
-78121874
-87430965
-96549874
-45678903
-32019012
-01329801
-10456732"#,
-    )
-        .0
+    let input: Vec<Vec<u32>> = aoc24::input(10)
         .lines()
         .map(|s| s.chars().map(|c| c.to_digit(10).unwrap()).collect())
         .collect();
@@ -26,16 +15,16 @@ fn main() {
                 let mut next = HashMap::new();
                 for ((y, x), v) in positions {
                     if y + 1 < input.len() && input[y + 1][x] == d {
-                        next.entry((y + 1, x)).and_modify(|n| *n += v).or_insert(v);
+                        *next.entry((y + 1, x)).or_default() += v;
                     }
                     if y > 0 && input[y - 1][x] == d {
-                        next.entry((y - 1, x)).and_modify(|n| *n += v).or_insert(v);
+                        *next.entry((y - 1, x)).or_default() += v;
                     }
                     if x + 1 < input[0].len() && input[y][x + 1] == d {
-                        next.entry((y, x + 1)).and_modify(|n| *n += v).or_insert(v);
+                        *next.entry((y, x + 1)).or_default() += v;
                     }
                     if x > 0 && input[y][x - 1] == d {
-                        next.entry((y, x - 1)).and_modify(|n| *n += v).or_insert(v);
+                        *next.entry((y, x - 1)).or_default() += v;
                     }
                 }
                 positions = next;

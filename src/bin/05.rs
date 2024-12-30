@@ -5,19 +5,18 @@ fn main() {
 
     let (rules, pages) = input.split_once("\n\n").unwrap();
 
-    let rules = rules.lines().fold(HashMap::new(), |mut hm, rule| {
-        let [k, v]: [&str; 2] = rule.split("|").collect::<Vec<_>>().try_into().unwrap();
-        hm.entry(k)
-            .and_modify(|vec: &mut Vec<&str>| vec.push(v))
-            .or_insert(vec![v]);
-        hm
-    });
+    let mut prio: HashMap<&str, Vec<_>> = HashMap::new();
+
+    for rule in rules.lines() {
+        let (k, v) = rule.split_once("|").unwrap();
+        prio.entry(k).or_default().push(v);
+    }
 
     let part1: u32 = pages.lines().fold(0, |a, line| {
         let l: Vec<_> = line.split(",").collect();
         for i in 0..l.len() {
-            let rules = rules.get(l[i]).unwrap();
-            if l[i + 1..].iter().any(|that| !rules.contains(that)) {
+            let prio = prio.get(l[i]).unwrap();
+            if l[i + 1..].iter().any(|that| !prio.contains(that)) {
                 return a;
             }
         }
@@ -31,7 +30,7 @@ fn main() {
         let mut i = 0;
         let mut inc = false;
         while i < l.len() {
-            let r = rules.get(l[i]).unwrap();
+            let r = prio.get(l[i]).unwrap();
             i += 1;
             for j in i..l.len() {
                 if !r.contains(&l[j]) {
